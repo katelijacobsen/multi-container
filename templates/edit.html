@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ recipe.recipe_title }} · Foodhead{% endblock title %}
+
+{# Full-page version of the edit form, used when JavaScript is off.
+   With JavaScript the same form is swapped into the recipe page instead. #}
+{% block content %}
+{% include "_recipe_form.html" %}
+{% endblock content %}

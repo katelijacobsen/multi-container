@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import field %}
+
+{% block title %}Log in · Foodhead{% endblock title %}
+
+{% block content %}
+<div class="auth">
+  <header class="auth__header">
+    <img class="auth__logo" src="{{ url_for('static', filename='imgs/foodhead-logo.png') }}" alt="" width="252" height="273" />
+    <h1 id="login-heading" class="auth__title">Log in</h1>
+  </header>
+
+  <form mix-post="{{ url_for('user_api.api_login') }}" class="auth__form" novalidate aria-labelledby="login-heading">
+    {{ field("user_email", "Email", type="email", autocomplete="email", placeholder="name@example.com") }}
+    {{ field("user_password", "Password", type="password", autocomplete="current-password") }}
+
+    <button class="primary-btn primary-btn--block" mix-await="Logging in…" mix-done="Log in">Log in</button>
+  </form>
+
+  <p class="auth__switch">New here? <a href="{{ url_for('signup') }}">Create an account</a></p>
+</div>
+{% endblock content %}

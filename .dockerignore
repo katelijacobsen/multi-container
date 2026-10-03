@@ -1,0 +1,10 @@
+.git
+.gitignore
+.venv
+node_modules
+__pycache__
+flask_session
+.env
+.DS_Store
+README.md
+db

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import field %}
+
+{% block title %}Sign up · Foodhead{% endblock title %}
+
+{% block content %}
+<div class="auth">
+  <header class="auth__header">
+    <img class="auth__logo" src="{{ url_for('static', filename='imgs/foodhead-logo.png') }}" alt="" width="252" height="273" />
+    <h1 id="signup-heading" class="auth__title">Create account</h1>
+    <p class="auth__lead">Become a foodhead and share your recipes.</p>
+  </header>
+
+  <form mix-post="{{ url_for('user_api.api_create_user') }}" class="auth__form" novalidate aria-labelledby="signup-heading">
+    {% set name_hint = rules.USER_NAME_MIN ~ "–" ~ rules.USER_NAME_MAX ~ " characters" %}
+
+    {{ field("user_username", "Username", hint=name_hint,
+             validate=rules.REGEX_USER_NAME, autocomplete="username", maxlength=rules.USER_NAME_MAX) }}
+    {{ field("user_first_name", "First name", hint=name_hint,
+             validate=rules.REGEX_USER_NAME, autocomplete="given-name", maxlength=rules.USER_NAME_MAX) }}
+    {{ field("user_last_name", "Last name", hint=name_hint,
+             validate=rules.REGEX_USER_NAME, autocomplete="family-name", maxlength=rules.USER_NAME_MAX) }}
+
+    <div class="field">
+      <label for="user_country_id">Country</label>
+      <select id="user_country_id" name="user_country_id" required aria-describedby="user_country_id-error">
+        <option value="">Choose your country</option>
+        {% for country in countries %}
+        <option value="{{ country.country_id }}">{{ country.country_name }}</option>
+        {% endfor %}
+      </select>
+      <p id="user_country_id-error" class="field-error"></p>
+    </div>
+
+    {{ field("user_email", "Email", type="email", placeholder="name@example.com",
+             validate=rules.REGEX_USER_EMAIL, autocomplete="email", maxlength=rules.USER_EMAIL_MAX) }}
+    {{ field("user_phone", "Phone number", type="tel",
+             hint=rules.USER_PHONE_MIN ~ "–" ~ rules.USER_PHONE_MAX ~ " digits",
+             validate=rules.REGEX_USER_PHONE, autocomplete="tel") }}
+    {{ field("user_password", "Password", type="password",
+             hint=rules.USER_PASSWORD_MIN ~ "–" ~ rules.USER_PASSWORD_MAX ~ " characters",
+             validate=rules.REGEX_USER_PASSWORD, autocomplete="new-password", maxlength=rules.USER_PASSWORD_MAX) }}
+
+    <button class="primary-btn primary-btn--block" mix-await="Creating account…" mix-done="Continue">Continue</button>
+  </form>
+
+  <p class="auth__switch">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</div>
+{% endblock content %}
