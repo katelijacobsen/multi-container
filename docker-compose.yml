@@ -5,8 +5,8 @@ services:
       target: runtime
     image: foodhead-web
     container_name: foodhead_web
-    command: flask run --host=0.0.0.0 --port=5000 --debug
     environment:
+      FLASK_DEBUG: ${FLASK_DEBUG:-1}
       DB_HOST: mariadb
       DB_NAME: ${MARIADB_DATABASE}
       DB_USER: ${MARIADB_USER}
