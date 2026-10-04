@@ -2,37 +2,77 @@ services:
   web:
     build:
       context: .
-      target: builder
-      dockerfile: Dockerfile
-    container_name: x_flask
-    depends_on:
-      - mariadb
+      target: runtime
+    image: foodhead-web
+    container_name: foodhead_web
+    command: flask run --host=0.0.0.0 --port=5000 --debug
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
-      - 80:80
+      - "127.0.0.1:80:5000"
     volumes:
       - .:/app
- 
+    networks:
+      - foodhead-net
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
   mariadb:
     image: mariadb:10.6.20
-    container_name: x_mariadb
+    container_name: foodhead_mariadb
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: foodhead
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     volumes:
       - mariadb_data:/var/lib/mysql
-    ports:
-      - 3306:3306
- 
+      - ./db/foodhead.sql:/docker-entrypoint-initdb.d/foodhead.sql:ro
+    networks:
+      - foodhead-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: x_phpmyadmin
-    depends_on:
-      - mariadb
+    container_name: foodhead_phpmyadmin
     environment:
       PMA_HOST: mariadb
-      MYSQL_ROOT_PASSWORD: password
     ports:
-      - 8080:80
- 
+      - "127.0.0.1:8080:80"
+    networks:
+      - foodhead-net
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+networks:
+  foodhead-net:
+    name: foodhead-net
+
 volumes:
   mariadb_data:
+    name: foodhead-mariadb-data
