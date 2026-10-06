@@ -1,4 +1,4 @@
-# Foodhead in containers
+# Foodhead in containers 
 
 In my first semester I built Foodhead, a small recipe-sharing app. In this project I put it in containers, so anyone can clone the repository and run the whole thing with one command, without installing Python or MariaDB themselves. This README explains how to run it, how I set it up and why, and what I would still improve.
 
@@ -90,7 +90,8 @@ docker compose up --build -d
 
 The first start takes a bit longer, because MariaDB creates the database and imports `db/foodhead.sql` by itself. The app waits until the database is healthy before it starts.
 
-![image.png](image.png)
+![Uploading awesomenetflixGIFbyOurPlanet.gif…]()
+
 
 ### Step 4: Check that everything runs
 
