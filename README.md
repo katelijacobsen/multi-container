@@ -287,6 +287,3 @@ I also learned how much a healthcheck matters, why the database doesn't need a p
 ```
 
 
-## Credits
-
-- [mixhtml](https://mixhtml.com) by Santiago Donoso
