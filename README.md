@@ -284,7 +284,3 @@ I also learned how much a healthcheck matters, why the database doesn't need a p
 ├── .dockerignore       # Files kept out of the image
 └── .env.example        # Template for your own .env
 ```
-
-## Credits
-
-- [mixhtml](https://mixhtml.com) by Santiago Donoso
