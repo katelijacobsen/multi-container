@@ -162,7 +162,7 @@ The healthcheck was important to me. `depends_on` on its own only waits until th
 - To change the limits, edit `deploy.resources.limits` for the service.
 - To turn debug off, set `FLASK_DEBUG=0` in `.env` and run `docker compose up -d`. Compose recreates the `web` container with the new value.
 
-## 6. Volumes: what survives
+## 6. Volumes
 
 | Args | Path | Stored Content |
 | --- | --- | --- |
@@ -191,7 +191,7 @@ The bind mount is also what makes development nice. When I change a template and
 
 ## 8. Security and efficiency
 
-### What I did
+### Practice
 
 - **Foodhead doesn't run as root.** `docker compose exec web id` shows `uid=1000(appuser)`, and `docker top foodhead_web` shows the Flask process running as user 1000. MariaDB runs as uid 999, the `mysql` user from its official image.
 - **Minimizing the image:** It went from 368 MB (the original: `python:3.9-slim`, one stage, running as root) to 197 MB.
@@ -203,9 +203,9 @@ The bind mount is also what makes development nice. When I change a template and
 
 ![docker images foodhead-web shows a disk usage of 197 MB](docs/screenshots/image-size.png)
 
-### Being honest about it
+### Insights
 
-- Most of the size saving comes from `alpine`, not from the two stages. I tested `python:3.12-slim` with the same two stages first, and it was 372 MB. On Alpine, the MySQL driver installs as plain Python instead of with its large C extension. The two stages will matter more as soon as a package needs compiling, because the build tools then stay in the builder stage.
+- Most of the size saving comes from `alpine`, not from the two stages.`python:3.12-slim` has been tested with the same two stages first, and it was 372 MB. On Alpine, the MySQL driver installs as plain Python instead of with its large C extension. The two stages will matter more as soon as a package needs compiling, because the build tools then stay in the builder stage.
 - "Rootless" in my project means the app runs as a normal user inside its container. **Docker Desktop itself is not running in rootless mode**.
 - The official phpMyAdmin image starts Apache as root and runs its workers as `www-data`. I use the image as it is.
 - Because of the bind mount, the `web` container runs the code from my project folder, not the code baked into the image. It also means `.env` is visible inside that container.
@@ -221,7 +221,7 @@ The bind mount is also what makes development nice. When I change a template and
 | `docker images foodhead-web` | Image size | 197 MB |
 | `docker stats --no-stream` | CPU and memory against the limits | See the table below |
 
-I measured resource use with `docker stats --no-stream` on 6 October 2026 at 09:41, while the stack was idle after running for about 26 minutes:
+Use `docker stats --no-stream` to look into the recourses, while the stack was idle after running for about 26 minutes:
 
 | Container | CPU | Memory / limit |
 | --- | --- | --- |
@@ -258,7 +258,7 @@ It isn't perfect, and these are the parts I know about:
 2. Make a production setup without the bind mount, so the image's own code is used, and store uploads in a named volume.
 3. Add a healthcheck for `web` and pin phpMyAdmin to a fixed version.
 
-## What I learned
+## Reflection
 
 The biggest lesson for me: adding `USER appuser` to the Dockerfile was not enough on its own. My first version of the setup ran as root, and it left folders like `flask_session` and `__pycache__` in my project that were owned by root. When the app started running as `appuser`, it got **Permission denied** trying to save sessions into them.
 
