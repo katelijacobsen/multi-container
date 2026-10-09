@@ -90,8 +90,9 @@ docker compose up --build -d
 
 The first start takes a bit longer, because MariaDB creates the database and imports `db/foodhead.sql` by itself. The app waits until the database is healthy before it starts.
 
-![Uploading awesomenetflixGIFbyOurPlanet.gif…]()
+![Output of docker compose up: the image is built, the network is created, foodhead_mariadb is healthy, and web and phpmyadmin are started](docs/screenshots/compose-up.png)
 
+*`foodhead_mariadb` becomes `Healthy` before `web` and `phpmyadmin` start.*
 
 ### Step 4: Check that everything runs
 
@@ -126,11 +127,9 @@ docker compose down -v
 | --- | --- |
 | `Dockerfile` | Builds the `foodhead-web` image in two stages |
 | `docker-compose.yml` | Defines the three services, the network, the volume and the resource limits |
-| `.dockerignore` | Keeps `.git`, `.env`, `db/`, caches and sessions out of the image |
+| `.dockerignore` | Keeps `.git`, `.env`, `db/`, `docs/`, caches and sessions out of the image |
 | `.env.example` | Template for your own `.env` |
 | `db/foodhead.sql` | The tables and sample data, imported on the first start |
-
-![image.png](image%201.png)
 
 ### The Dockerfile
 
@@ -170,11 +169,16 @@ The healthcheck was important to me. `depends_on` on its own only waits until th
 | `foodhead-mariadb-data` | `/var/lib/mysql` in `mariadb` | All database data: users, recipes, ingredients and steps |
 | `.` (the project folder) | `/app` in `web` | My code, uploaded photos and login sessions |
 | `./db/foodhead.sql` | `/docker-entrypoint-initdb.d/` in `mariadb` | The SQL script imported on the first start |
+
+![docker volume ls shows the named volume foodhead-mariadb-data](docs/screenshots/volume-ls.png)
+
 - After `docker compose down` and `docker compose up -d`, everything is still there: the database is in the volume, and the photos are on my disk.
 - Rebuilding the image doesn't touch any data.
 - Only `docker compose down -v` deletes the database. On the next start it is imported again from `db/foodhead.sql`.
 
 The bind mount is also what makes development nice. When I change a template and refresh the browser, the change is there right away, without rebuilding the image. With `FLASK_DEBUG=1`, saving `app.py` makes Flask restart by itself, and the log says `Detected change in '/app/app.py', reloading`.
+
+![The web log after saving app.py: Detected change in '/app/app.py', reloading](docs/screenshots/auto-reload.png)
 
 ## 7. Networking
 
@@ -191,11 +195,13 @@ The bind mount is also what makes development nice. When I change a template and
 
 - **Foodhead doesn't run as root.** `docker compose exec web id` shows `uid=1000(appuser)`, and `docker top foodhead_web` shows the Flask process running as user 1000. MariaDB runs as uid 999, the `mysql` user from its official image.
 - **Minimizing the image:** It went from 368 MB (the original: `python:3.9-slim`, one stage, running as root) to 197 MB.
-- **Fewer files in the image.** `.dockerignore` keeps `.git`, `.env`, `db/`, caches and sessions out.
+- **Fewer files in the image.** `.dockerignore` keeps `.git`, `.env`, `db/`, `docs/`, caches and sessions out.
 - **No passwords in the repository.** They are in `.env` and reach the containers as environment variables.
 - **Foodhead has its own database user** with access to the `foodhead` database only, instead of using root.
 - **As few open ports as possible.** The database has none, and the rest only listen on `127.0.0.1`.
 - **Debug mode is off by default** and only on through `.env` while developing.
+
+![docker images foodhead-web shows a disk usage of 197 MB](docs/screenshots/image-size.png)
 
 ### Being honest about it
 
@@ -225,6 +231,10 @@ I measured resource use with `docker stats --no-stream` on 6 October 2026 at 09:
 
 All three stay far below their limits, but keep in mind these numbers are from an idle stack, not under load.
 
+![docker stats --no-stream from an earlier run, with memory usage and limits for the three containers](docs/screenshots/docker-stats.png)
+
+*An earlier run of the same command. The exact numbers change from run to run, but every container stays well under its limit.*
+
 **Try it yourself :)**
 
 1. Open [http://localhost](http://localhost): the front page lists the recipes from the database.
@@ -250,7 +260,13 @@ It isn't perfect, and these are the parts I know about:
 
 ## What I learned
 
-The biggest lesson for me: adding `USER appuser` to the Dockerfile was not enough on its own. My first version of the setup ran as root, and it left folders like `flask_session` and `__pycache__` in my project that were owned by root. When the app started running as `appuser`, it got **Permission denied** trying to save sessions into them. Deleting the folders fixed it, and Flask created `flask_session` again, now owned by `appuser`. Since then I don't trust a security setting until I have tested it.
+The biggest lesson for me: adding `USER appuser` to the Dockerfile was not enough on its own. My first version of the setup ran as root, and it left folders like `flask_session` and `__pycache__` in my project that were owned by root. When the app started running as `appuser`, it got **Permission denied** trying to save sessions into them.
+
+![whoami prints appuser, and touch /app/flask_session/test fails with Permission denied](docs/screenshots/permission-denied.png)
+
+![ls -la /app shows flask_session and __pycache__ owned by root with drwxr-xr-x, so appuser can't write to them](docs/screenshots/root-owned-folders.png)
+
+Deleting the folders fixed it, and Flask created `flask_session` again, now owned by `appuser`. Since then I don't trust a security setting until I have tested it.
 
 I also learned how much a healthcheck matters, why the database doesn't need a port on my computer, and that a volume only gets its seed data the very first time.
 
@@ -280,6 +296,7 @@ I also learned how much a healthcheck matters, why the database doesn't need a p
 ├── templates/          # Jinja templates
 ├── static/             # CSS, JavaScript, fonts, images and uploads
 ├── db/foodhead.sql     # Tables and sample data, imported on the first start
+├── docs/screenshots/   # Screenshots used in this README
 ├── Dockerfile          # Two-stage build, non-root user
 ├── docker-compose.yml  # web, mariadb and phpmyadmin, network, volume and limits
 ├── .dockerignore       # Files kept out of the image
